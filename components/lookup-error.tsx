@@ -6,10 +6,16 @@ export default function LookupError({
   error,
   username,
   retryHref,
+  subject = `@${username}`,
+  rateLimitNote,
 }: {
   error: unknown;
   username: string;
   retryHref: string;
+  /** What was being looked up, for the generic message. */
+  subject?: string;
+  /** Extra line under the rate-limit notice. */
+  rateLimitNote?: string;
 }) {
   const tryAgain = (label = "Try again") => (
     <Link href={retryHref} className="text-accent underline underline-offset-2">
@@ -34,6 +40,7 @@ export default function LookupError({
             ? `Lookups work again at ${error.resetAt.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })} (in about ${mins} ${mins === 1 ? "minute" : "minutes"}).`
             : "Try again in a few minutes."}
         </p>
+        {rateLimitNote && <p className="mt-1.5">{rateLimitNote}</p>}
         <p className="mt-1.5">
           {process.env.GITHUB_TOKEN ? (
             "This server already uses a GITHUB_TOKEN, which allows 5,000 requests per hour."
@@ -69,7 +76,7 @@ export default function LookupError({
   // A bug on our side. Log it so it isn't swallowed by the friendly message.
   console.error(error);
   return (
-    <Notice error title={`Something went wrong while looking up @${username}.`}>
+    <Notice error title={`Something went wrong while looking up ${subject}.`}>
       {tryAgain()}
     </Notice>
   );

@@ -4,19 +4,16 @@ export default function SearchForm({ defaultValue, className = "" }: { defaultVa
   return (
     <Form action="/" className={className}>
       <label htmlFor="u" className="sr-only">
-        GitHub username
+        GitHub username or LinkedIn URL
       </label>
       <div className="flex items-center rounded-2xl border border-line bg-surface py-1.5 pr-1.5 pl-4 transition focus-within:border-accent focus-within:ring-4 focus-within:ring-accent-soft">
-        <span aria-hidden className="mr-1 font-mono text-muted">
-          @
-        </span>
         <input
           // Remount when the URL changes so the field reflects the current user.
           key={defaultValue}
           id="u"
           name="u"
           defaultValue={defaultValue}
-          placeholder="GitHub username"
+          placeholder="GitHub username or LinkedIn URL"
           autoComplete="off"
           autoCapitalize="none"
           spellCheck={false}

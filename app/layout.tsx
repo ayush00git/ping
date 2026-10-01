@@ -12,8 +12,9 @@ const instrument = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  title: "ping · find a GitHub user's public commit email",
-  description: "Look up a GitHub username to find the public email in their latest repository's commits.",
+  title: "ping · find a developer's public commit email",
+  description:
+    "Enter a GitHub username or a LinkedIn profile URL to find the developer's GitHub account and the public email in their latest repository's commits.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

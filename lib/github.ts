@@ -50,9 +50,11 @@ export class GitHubError extends Error {
 /** fetch() itself failed: DNS, offline, connection reset. Not an HTTP error. */
 export class NetworkError extends Error {}
 
-async function gh<T>(path: string): Promise<T> {
+export const hasToken = () => !!process.env.GITHUB_TOKEN;
+
+async function gh<T>(path: string, accept = "application/vnd.github+json"): Promise<T> {
   const headers: HeadersInit = {
-    Accept: "application/vnd.github+json",
+    Accept: accept,
     "X-GitHub-Api-Version": "2022-11-28",
   };
   // Optional: raises the rate limit from 60 to 5000 requests/hour.
@@ -110,4 +112,71 @@ export function getAuthorCommits(fullName: string, username: string): Promise<Co
   return commitsOrEmpty(
     `/repos/${fullName}/commits?author=${encodeURIComponent(username)}&per_page=${AUTHOR_COMMITS_LIMIT}`,
   );
+}
+
+// ---- Finder (LinkedIn → GitHub account) ----
+
+export type GitHubUser = {
+  login: string;
+  type: "User" | "Organization";
+  name: string | null;
+  company: string | null;
+  location: string | null;
+  bio: string | null;
+  blog: string | null;
+  followers: number;
+  avatar_url: string;
+  html_url: string;
+};
+
+export function getUser(login: string): Promise<GitHubUser> {
+  return gh<GitHubUser>(`/users/${encodeURIComponent(login)}`);
+}
+
+export async function getSocialUrls(login: string): Promise<string[]> {
+  const accounts = await gh<{ provider: string; url: string }[]>(
+    `/users/${encodeURIComponent(login)}/social_accounts`,
+  );
+  return accounts.map((a) => a.url);
+}
+
+/** Name search. The name must stay unquoted (quoted returns nothing); a multi-word city must be quoted. */
+export async function searchUsersByName(
+  name: string,
+  city?: string,
+): Promise<{ total: number; logins: string[] }> {
+  const q = `fullname:${name} type:user${city ? ` location:"${city.replace(/"/g, "")}"` : ""}`;
+  const res = await gh<{ total_count: number; items: { login: string }[] }>(
+    `/search/users?q=${encodeURIComponent(q)}&per_page=10`,
+  );
+  return { total: res.total_count, logins: res.items.map((i) => i.login) };
+}
+
+export type CodeHit = {
+  owner: string;
+  ownerType: "User" | "Organization";
+  repo: string;
+  path: string;
+  fragments: string[];
+};
+
+/** Code search for the profile URL. Needs a token; allows 10 searches a minute. */
+export async function searchCodeForLinkedIn(slug: string): Promise<CodeHit[]> {
+  const res = await gh<{
+    items: {
+      path: string;
+      repository: { name: string; owner: { login: string; type: "User" | "Organization" } };
+      text_matches?: { fragment: string }[];
+    }[];
+  }>(
+    `/search/code?q=${encodeURIComponent(`"linkedin.com/in/${slug}"`)}&per_page=30`,
+    "application/vnd.github.text-match+json",
+  );
+  return res.items.map((i) => ({
+    owner: i.repository.owner.login,
+    ownerType: i.repository.owner.type,
+    repo: i.repository.name,
+    path: i.path,
+    fragments: (i.text_matches ?? []).map((m) => m.fragment),
+  }));
 }

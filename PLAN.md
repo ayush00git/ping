@@ -14,7 +14,7 @@ that list in one go.
 - `lib/shortlist.ts`: the recipient list in `localStorage`.
 - `components/`: repo summary, "Emails found" panel with **Yes, add**, commit log, recipient tray, error states.
 
-Next: Phase 5 (LinkedIn → GitHub finder) is in progress. Phase 3 (compose and send) hasn't started.
+Phase 5 (LinkedIn → GitHub finder at `/find`) is done. The `/list` page is in progress. Phase 3 (compose and send) hasn't started.
 All code is written by one session (**designer-bruh**) and reviewed by the planner session.
 
 ## Facts checked against the live API (2026-09-30)
@@ -176,6 +176,14 @@ services and needs `GITHUB_TOKEN` (code search requires auth).
 
 5. **This is them** → `/?u=<login>` (the existing lookup).
 
+**Decided during review (2026-10-01):**
+- Company/city/college match on whole words. City compares only the most specific place, so "India" doesn't match "New Delhi, India".
+- A name counts as a full match when one contains the other with 2+ words ("John Smith" ⊂ "John Michael Smith"). A single word is partial and can't make Likely.
+- Common names (over 100 GitHub accounts) need 2 matching details for Likely.
+- An account linking a *different* LinkedIn profile goes to a collapsed **Ruled out** group.
+- The filled "This is them" button goes only to a single best match. Ties get outlined buttons and a "compare them" note.
+- Tests: `npm test` (node:test, no extra dependencies).
+
 **Limits:** people with no GitHub account, or who use a pseudonym and never link LinkedIn, can't
 be found. Common names without hints give many "Possible" results.
 
@@ -230,6 +238,7 @@ auto-select-all or scraping of many users at once.
 1. ~~`lib/emails.ts` and the `lib/github.ts` changes~~ (done; Vitest tests still to add)
 2. ~~`lib/shortlist.ts` store~~ (done)
 3. ~~Email panel, Yes toggle, tray~~ (done)
-4. Phase 5: LinkedIn → GitHub finder (in progress)
-5. `lib/mailer.ts` + `app/actions.ts` (dry run first), then `/compose`
-6. Auth gate, only if it's ever deployed (currently local only)
+4. ~~Phase 5: LinkedIn → GitHub finder~~ (done)
+5. `/list` page: review and manage the recipient list (in progress)
+6. `lib/mailer.ts` + `app/actions.ts` (dry run first), then `/compose`
+7. Auth gate, only if it's ever deployed (currently local only)
