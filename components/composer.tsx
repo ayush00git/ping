@@ -14,6 +14,7 @@ import {
   estimateSeconds,
   fromAddress,
   hasOptOut,
+  hasPlaceholder,
   isEmail,
   MAX_SUBJECT,
   renderParts,
@@ -24,6 +25,7 @@ import {
   type SendError,
 } from "@/lib/template";
 import { Bone, Card, Email, plural } from "@/components/ui";
+import { STICKY_SIDE } from "@/components/layout";
 
 const GAP_MS = 4000; // pause between sends, so Gmail sees a person-paced trickle
 const CHIPS_SHOWN = 6;
@@ -111,6 +113,13 @@ export default function Composer({ status, senderName }: { status: MailStatus; s
   }
 
   const setDraft = (next: Partial<typeof draft>) => saveDraft({ ...draft, ...next });
+  const fallbackDraft = defaultDraft(senderName);
+  const isDefault = draft.subject === fallbackDraft.subject && draft.body === fallbackDraft.body;
+  function resetDraft() {
+    // Only a changed message is worth a confirmation; a changed subject is quick to retype.
+    if (draft.body !== fallbackDraft.body && !confirm("Reset the message to the default template? Your edits will be lost.")) return;
+    saveDraft(null); // null = follow the default (and the sender name) from now on
+  }
 
   function insertToken(key: string) {
     const field = lastField.current;
@@ -138,6 +147,11 @@ export default function Composer({ status, senderName }: { status: MailStatus; s
       text: !subject ? "Write a subject" : subject.length > MAX_SUBJECT ? `Shorten the subject to ${MAX_SUBJECT} characters` : "Subject written",
     },
     { ok: draft.body.trim().length > 0, blocks: true, text: draft.body.trim() ? "Message written" : "Write a message" },
+    {
+      ok: !hasPlaceholder(draft.body),
+      blocks: true,
+      text: hasPlaceholder(draft.body) ? "Replace the [placeholder] line with why you're writing" : "Placeholder line replaced",
+    },
     { ok: unknown.length === 0, blocks: true, text: unknown.length ? `Fix ${unknown.join(", ")}` : "No unknown tokens" },
     {
       ok: hasOptOut(draft.body),
@@ -310,13 +324,22 @@ export default function Composer({ status, senderName }: { status: MailStatus; s
           <div className="mt-8 grid gap-10 lg:grid-cols-2 lg:items-start">
             {/* Draft */}
             <section aria-labelledby="draft-h">
-              <div className="flex items-baseline justify-between gap-3">
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                 <h3 id="draft-h" className="font-medium">
                   Draft
                 </h3>
-                <span className="text-[13px] text-muted" aria-live="polite">
-                  {saved ? "Draft saved" : "Default template"}
+                <span className="ml-auto text-[13px] text-muted" aria-live="polite">
+                  {isDefault ? "Using the default template" : "Draft saved"}
                 </span>
+                {!isDefault && (
+                  <button
+                    type="button"
+                    onClick={resetDraft}
+                    className="cursor-pointer text-[13px] text-accent underline-offset-4 hover:underline"
+                  >
+                    Reset to default
+                  </button>
+                )}
               </div>
               <Card className="mt-3">
                 <label htmlFor="subject" className="text-sm font-medium">
@@ -365,104 +388,96 @@ export default function Composer({ status, senderName }: { status: MailStatus; s
                 <p className="mt-2 text-[13px] text-muted">
                   Plain text. Each person gets their own copy with their details filled in. Replies come to{" "}
                   {status.from ? <Email email={fromAddress(status.from)} /> : "you"}.
-                  {saved && (
-                    <>
-                      {" "}
-                      <button
-                        type="button"
-                        onClick={() => saveDraft(defaultDraft(senderName))}
-                        className="cursor-pointer text-accent underline-offset-4 hover:underline"
-                      >
-                        Reset to the default template
-                      </button>
-                    </>
-                  )}
                 </p>
               </Card>
             </section>
 
-            {/* Preview */}
-            <section aria-labelledby="preview-h">
-              <div className="flex flex-wrap items-center gap-2">
-                <h3 id="preview-h" className="font-medium">
-                  <label htmlFor="preview-for">Preview for</label>
-                </h3>
-                <select
-                  id="preview-for"
-                  value={at}
-                  onChange={(e) => setPreviewAt(Number(e.target.value))}
-                  className="min-w-0 max-w-64 cursor-pointer rounded-lg border border-line bg-surface px-2 py-1 text-sm"
-                >
-                  {recipients.map((r, i) => (
-                    <option key={r.email} value={i}>
-                      {r.name || r.username}
-                    </option>
-                  ))}
-                </select>
-                <div className="ml-auto flex items-center gap-1">
-                  <span className="mr-1 text-[13px] text-muted">
-                    {at + 1} of {n}
-                  </span>
-                  <StepButton label="Previous person" disabled={at === 0} onClick={() => setPreviewAt(at - 1)}>
-                    ‹
-                  </StepButton>
-                  <StepButton label="Next person" disabled={at === n - 1} onClick={() => setPreviewAt(at + 1)}>
-                    ›
-                  </StepButton>
+            {/* Wide screens: preview, checks and Send stay in view while the draft scrolls. */}
+            <div className={`${STICKY_SIDE} lg:-mx-2 lg:px-2`}>
+              {/* Preview */}
+              <section aria-labelledby="preview-h">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 id="preview-h" className="font-medium">
+                    <label htmlFor="preview-for">Preview for</label>
+                  </h3>
+                  <select
+                    id="preview-for"
+                    value={at}
+                    onChange={(e) => setPreviewAt(Number(e.target.value))}
+                    className="min-w-0 max-w-64 cursor-pointer rounded-lg border border-line bg-surface px-2 py-1 text-sm"
+                  >
+                    {recipients.map((r, i) => (
+                      <option key={r.email} value={i}>
+                        {r.name || r.username}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="ml-auto flex items-center gap-1">
+                    <span className="mr-1 text-[13px] text-muted">
+                      {at + 1} of {n}
+                    </span>
+                    <StepButton label="Previous person" disabled={at === 0} onClick={() => setPreviewAt(at - 1)}>
+                      ‹
+                    </StepButton>
+                    <StepButton label="Next person" disabled={at === n - 1} onClick={() => setPreviewAt(at + 1)}>
+                      ›
+                    </StepButton>
+                  </div>
                 </div>
-              </div>
-              <Preview r={previewed} draft={draft} from={status.from} />
-            </section>
+                <Preview r={previewed} draft={draft} from={status.from} />
+              </section>
+
+              {/* Pre-flight checks and actions */}
+              <section aria-labelledby="checks-h" className="mt-8">
+                <h3 id="checks-h" className="font-medium">
+                  Before you send
+                </h3>
+                <ul className="mt-2 space-y-1 text-sm">
+                  {checks.map((c) => (
+                    <li key={c.text} className={`flex gap-2 ${!c.ok && c.blocks ? "text-danger" : c.ok ? "" : "text-muted"}`}>
+                      <span aria-hidden className="w-4 shrink-0 text-center">
+                        {c.ok ? "✓" : c.blocks ? "✗" : "–"}
+                      </span>
+                      <span>
+                        <span className="sr-only">{c.ok ? "Done: " : c.blocks ? "Must fix: " : "Recommended: "}</span>
+                        {c.text}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="mt-5 flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={onSendTest}
+                    disabled={!!cantSendWhy || test.state === "sending"}
+                    className="cursor-pointer rounded-xl border border-line bg-surface px-4 py-2 text-sm font-medium transition hover:border-accent disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {test.state === "sending" ? "Sending test…" : "Send test to me"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => dialogRef.current?.showModal()}
+                    disabled={!!cantSendWhy}
+                    className="cursor-pointer rounded-xl bg-accent px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 dark:text-bg"
+                  >
+                    Send to {plural(n, "person", "people")}
+                    {status.dryRun && " (dry run)"}
+                  </button>
+                </div>
+                <div aria-live="polite" className="mt-2 text-sm">
+                  {cantSendWhy && <p className="text-muted">{cantSendWhy}</p>}
+                  {test.state === "done" && (
+                    <p>
+                      {test.dryRun ? "Dry run: test logged on the server for " : "Test sent to "}
+                      <Email email={test.to} /> (as {test.as}).
+                    </p>
+                  )}
+                  {test.state === "failed" && <p className="text-danger">Test not sent. {test.error.message}</p>}
+                </div>
+              </section>
+            </div>
           </div>
-
-          {/* Pre-flight checks and actions */}
-          <section aria-labelledby="checks-h" className="mt-10 max-w-2xl">
-            <h3 id="checks-h" className="font-medium">
-              Before you send
-            </h3>
-            <ul className="mt-2 space-y-1 text-sm">
-              {checks.map((c) => (
-                <li key={c.text} className={`flex gap-2 ${!c.ok && c.blocks ? "text-danger" : c.ok ? "" : "text-muted"}`}>
-                  <span aria-hidden className="w-4 shrink-0 text-center">
-                    {c.ok ? "✓" : c.blocks ? "✗" : "–"}
-                  </span>
-                  <span>
-                    <span className="sr-only">{c.ok ? "Done: " : c.blocks ? "Must fix: " : "Recommended: "}</span>
-                    {c.text}
-                  </span>
-                </li>
-              ))}
-            </ul>
-
-            <div className="mt-5 flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={onSendTest}
-                disabled={!!cantSendWhy || test.state === "sending"}
-                className="cursor-pointer rounded-xl border border-line bg-surface px-4 py-2 text-sm font-medium transition hover:border-accent disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {test.state === "sending" ? "Sending test…" : "Send test to me"}
-              </button>
-              <button
-                type="button"
-                onClick={() => dialogRef.current?.showModal()}
-                disabled={!!cantSendWhy}
-                className="cursor-pointer rounded-xl bg-accent px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 dark:text-bg"
-              >
-                Send to {plural(n, "person", "people")}
-              </button>
-            </div>
-            <div aria-live="polite" className="mt-2 text-sm">
-              {cantSendWhy && <p className="text-muted">{cantSendWhy}</p>}
-              {test.state === "done" && (
-                <p>
-                  {test.dryRun ? "Dry run: test logged on the server for " : "Test sent to "}
-                  <Email email={test.to} /> (as {test.as}).
-                </p>
-              )}
-              {test.state === "failed" && <p className="text-danger">Test not sent. {test.error.message}</p>}
-            </div>
-          </section>
 
           <ConfirmDialog
             ref={dialogRef}
@@ -478,14 +493,14 @@ export default function Composer({ status, senderName }: { status: MailStatus; s
 }
 
 function ModeBanner({ status }: { status: MailStatus }) {
-  const [tone, text] = !status.configured
-    ? ["border-danger text-danger", `Email isn't set up. Missing: ${status.missing.join(", ")}. The preview still works.`]
+  const [tone, label, text] = !status.configured
+    ? ["border-danger bg-surface text-danger", "Not set up", `Email isn't set up. Missing: ${status.missing.join(", ")}. The preview still works.`]
     : status.dryRun
-      ? ["border-line text-ink", "Dry run: emails are logged on the server, not sent."]
-      : ["border-accent text-ink", `Live: emails go out from ${status.from}.`];
+      ? ["border-warn/40 bg-warn-soft text-ink", "Dry run", "Emails are logged on the server, not sent."]
+      : ["border-accent/40 bg-accent-soft text-ink", "Live", `Emails go out from ${status.from}.`];
   return (
-    <p role="status" className={`mt-5 max-w-2xl rounded-xl border bg-surface px-4 py-2.5 text-sm ${tone}`}>
-      {text}
+    <p role="status" className={`mt-5 max-w-2xl rounded-xl border px-4 py-2.5 text-sm ${tone}`}>
+      <strong className="font-semibold">{label}:</strong> {text}
     </p>
   );
 }
@@ -510,7 +525,7 @@ function Highlighted({ parts }: { parts: Part[] }) {
       <mark key={i} className="rounded bg-danger/15 px-0.5 text-danger">
         {p.text}
       </mark>
-    ) : p.kind === "fallback" ? (
+    ) : p.kind === "fallback" || p.kind === "placeholder" ? (
       <mark key={i} className="rounded bg-warn-soft px-0.5 text-warn">
         {p.text}
       </mark>
@@ -539,7 +554,12 @@ function Preview({ r, draft, from }: { r: Recipient; draft: { subject: string; b
           <Highlighted parts={subject} />
         </dd>
       </dl>
-      <div className="mt-3 text-[15px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]">
+      {/* Wide screens: a long message scrolls here, so the checks and Send below stay on screen. */}
+      <div
+        tabIndex={0}
+        aria-label="Message as this person gets it"
+        className="mt-3 text-[15px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere] lg:max-h-[max(10rem,calc(100dvh_-_34rem))] lg:overflow-y-auto"
+      >
         <Highlighted parts={body} />
       </div>
       {used.size > 0 && (
@@ -601,6 +621,7 @@ function ConfirmDialog({
           className="cursor-pointer rounded-xl bg-accent px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 dark:text-bg"
         >
           Send {plural(count, "email")}
+          {status.dryRun && " (dry run)"}
         </button>
       </div>
     </dialog>

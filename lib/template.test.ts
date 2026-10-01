@@ -9,6 +9,7 @@ import {
   fromAddress,
   fromName,
   hasOptOut,
+  hasPlaceholder,
   render,
   renderParts,
   stopsBatch,
@@ -64,6 +65,22 @@ test("default draft signs with the sender name and has an opt-out", () => {
   assert.ok(d.body.includes("Best,\nDan Abramov"));
   assert.ok(hasOptOut(d.body));
   assert.deepEqual(unknownTokens(d.subject, d.body), []);
+});
+test("default draft has a placeholder line that blocks sending until replaced", () => {
+  const d = defaultDraft("Dan");
+  assert.ok(hasPlaceholder(d.body));
+  assert.ok(!d.body.includes("\n\n\n"), "no hollow blank lines");
+  const r = validateMessage({ to: "a@example.com", subject: d.subject, body: d.body });
+  assert.ok(!r.ok && r.error.message.startsWith("Replace the [Say why"));
+  const edited = d.body.replace(/\[Say why[^\]]*\]/, "Your post on hooks helped me a lot.");
+  assert.equal(hasPlaceholder(edited), false);
+  assert.equal(validateMessage({ to: "a@example.com", subject: d.subject, body: edited }).ok, true);
+});
+test("a half-edited placeholder still blocks", () => assert.ok(hasPlaceholder("x [Say why you're writing: blah")));
+test("renderParts: the placeholder is one highlighted part, tokens filled in", () => {
+  const parts = renderParts("A\n[Say why you're writing: about {{repo}}]\nB", dan);
+  assert.deepEqual(parts.map((p) => p.kind), ["plain", "placeholder", "plain"]);
+  assert.equal(parts[1].text, "[Say why you're writing: about overreacted]");
 });
 test("opt-out detection", () => {
   assert.equal(hasOptOut("Reply STOP to unsubscribe"), true);

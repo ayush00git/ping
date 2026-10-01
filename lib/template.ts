@@ -34,13 +34,31 @@ export function personalise(r: RecipientFields): { values: Record<TokenKey, stri
   };
 }
 
-export type Part = { text: string; kind: "plain" | "value" | "fallback" | "unknown"; token?: string };
+export type Part = { text: string; kind: "plain" | "value" | "fallback" | "unknown" | "placeholder"; token?: string };
+
+/** The line in the default template that the sender must replace, so nobody sends a hollow email. */
+export const PLACEHOLDER_START = "[Say why you're writing";
+const PLACEHOLDER_RE = /\[Say why you're writing[^\]\n]*\]?/g;
+export const hasPlaceholder = (text: string) => text.includes(PLACEHOLDER_START);
 
 const TOKEN_RE = /\{\{\s*([A-Za-z_]+)\s*\}\}/g;
 const KEY = new Map(TOKENS.map((t) => [t.key.toLowerCase(), t.key]));
 
 /** The template split into plain text, filled-in values, fallbacks and unknown tokens (for highlighting). */
 export function renderParts(template: string, r: RecipientFields): Part[] {
+  // The placeholder line is shown as one highlighted part, with its tokens filled in.
+  const out: Part[] = [];
+  let last = 0;
+  for (const m of template.matchAll(PLACEHOLDER_RE)) {
+    out.push(...renderTokens(template.slice(last, m.index), r));
+    out.push({ text: renderTokens(m[0], r).map((p) => p.text).join(""), kind: "placeholder" });
+    last = m.index + m[0].length;
+  }
+  out.push(...renderTokens(template.slice(last), r));
+  return out;
+}
+
+function renderTokens(template: string, r: RecipientFields): Part[] {
   const { values, fallbacks } = personalise(r);
   const parts: Part[] = [];
   let last = 0;
@@ -90,7 +108,8 @@ export function defaultDraft(senderName: string): { subject: string; body: strin
   return {
     subject: "Saw {{repo}} on GitHub",
     body:
-      "Hi {{firstName}},\n\nI came across {{repo}} ({{repoUrl}}) and wanted to reach out.\n\n\n\nBest,\n" +
+      "Hi {{firstName}},\n\nI came across {{repo}} ({{repoUrl}}) and wanted to reach out.\n\n" +
+      "[Say why you're writing: what you liked about {{repo}}, or what you'd like to ask]\n\nBest,\n" +
       `${senderName}\n\nIf you'd rather not hear from me, just reply and I won't email again.`,
   };
 }
@@ -126,6 +145,9 @@ export function validateMessage(
   if (!m.body.trim()) return { ok: false, error: { kind: "other", message: "The message is empty." } };
   if (new TextEncoder().encode(m.body).length > MAX_BODY_BYTES) {
     return { ok: false, error: { kind: "other", message: "The message is longer than 20 KB." } };
+  }
+  if (checkTokens && hasPlaceholder(m.body)) {
+    return { ok: false, error: { kind: "other", message: "Replace the [Say why you're writing…] line with your own words." } };
   }
   const unknown = checkTokens ? unknownTokens(m.subject, m.body) : [];
   if (unknown.length) {
