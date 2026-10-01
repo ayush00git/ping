@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { useHydrated, useShortlist, type Recipient } from "@/lib/shortlist";
+import { useHydrated, useSelection, useSentLog, useShortlist, type Recipient } from "@/lib/shortlist";
+import { isSelected, wasEmailed, type SentLog } from "@/lib/outbox";
 import { formatDate } from "@/components/format";
 import { Bone, Card, Email, plural } from "@/components/ui";
 
@@ -16,10 +17,48 @@ const STATUS: Record<Recipient["status"], string> = {
   failed: "Failed",
 };
 
+const shortDate = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+
+/** The sent log is the source of truth for "Sent", so it survives remove + re-add. */
+function statusText(r: Recipient, log: SentLog) {
+  if (r.status === "failed") return `Failed: ${r.error ?? "unknown reason"}`;
+  const entry = log[r.email];
+  if (entry && !entry.dryRun) return `Sent ${formatDate(entry.at)}`;
+  if (entry?.dryRun) return `Dry run ${formatDate(entry.at)} (not sent)`;
+  return STATUS[r.status];
+}
+
+type RowProps = {
+  log: SentLog;
+  ticked: (r: Recipient) => boolean;
+  onTick: (r: Recipient, on: boolean) => void;
+  onRemove: (r: Recipient) => void;
+};
+
+function Tick({ r, ticked, onTick }: { r: Recipient; ticked: boolean; onTick: RowProps["onTick"] }) {
+  return (
+    <input
+      type="checkbox"
+      checked={ticked}
+      onChange={(e) => onTick(r, e.target.checked)}
+      aria-label={`Include ${r.name} (${r.email}) in the next email`}
+      className="size-4 cursor-pointer accent-[var(--accent)]"
+    />
+  );
+}
+
+/** Shown when someone already emailed is ticked again, so a second email is never an accident. */
+function AlreadyEmailed({ r, log, ticked }: { r: Recipient; log: SentLog; ticked: boolean }) {
+  if (!ticked || !wasEmailed(log, r.email)) return null;
+  return <span className="mt-1 block text-[13px] text-danger">Already emailed on {shortDate(log[r.email].at)}</span>;
+}
+
 const fold = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 
 export default function ListManager() {
   const { items, remove, restore, clear } = useShortlist();
+  const log = useSentLog();
+  const { overrides, set: setSelected } = useSelection();
   const hydrated = useHydrated();
   const [query, setQuery] = useState("");
   const [removed, setRemoved] = useState<Recipient | null>(null);
@@ -67,8 +106,30 @@ export default function ListManager() {
     setRemoved(r);
   };
 
+  const ticked = (r: Recipient) => isSelected(r.email, overrides, log);
+  const onTick = (r: Recipient, on: boolean) => setSelected([r.email], on);
+  const selectedCount = items.filter(ticked).length;
+  const rowProps: RowProps = { log, ticked, onTick, onRemove };
+
   const actions = (
-    <div className="ml-auto flex gap-2">
+    <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+      {selectedCount === 0 && <span className="text-sm text-muted">Select at least one person</span>}
+      {selectedCount > 0 ? (
+        <Link
+          href="/compose"
+          className="rounded-xl bg-accent px-4 py-2 text-sm font-medium whitespace-nowrap text-white transition hover:opacity-90 dark:text-bg"
+        >
+          Compose email to {plural(selectedCount, "person", "people")} →
+        </Link>
+      ) : (
+        <button
+          type="button"
+          disabled
+          className="cursor-not-allowed rounded-xl bg-accent px-4 py-2 text-sm font-medium whitespace-nowrap text-white opacity-40 dark:text-bg"
+        >
+          Compose email to 0 people →
+        </button>
+      )}
       <button type="button" onClick={() => downloadCsv(newestFirst)} className={SECONDARY}>
         Export CSV
       </button>
@@ -174,8 +235,8 @@ export default function ListManager() {
                   Showing {rows.length} of {items.length}.
                 </p>
               )}
-              <ListTable rows={rows} onRemove={onRemove} />
-              <ListCards rows={rows} onRemove={onRemove} />
+              <ListTable rows={rows} {...rowProps} onTickAll={(on) => setSelected(rows.map((r) => r.email), on)} />
+              <ListCards rows={rows} {...rowProps} />
             </>
           )}
         </>
@@ -215,13 +276,33 @@ function RemoveButton({ r, onRemove }: { r: Recipient; onRemove: (r: Recipient) 
 }
 
 /** Wider screens: a real table. */
-function ListTable({ rows, onRemove }: { rows: Recipient[]; onRemove: (r: Recipient) => void }) {
+function ListTable({
+  rows,
+  log,
+  ticked,
+  onTick,
+  onTickAll,
+  onRemove,
+}: RowProps & { rows: Recipient[]; onTickAll: (on: boolean) => void }) {
+  const tickedCount = rows.filter(ticked).length;
   return (
     <div className="mt-5 hidden overflow-hidden rounded-2xl border border-line bg-surface sm:block">
       <table className="w-full text-left text-sm">
         <caption className="sr-only">People on your list, newest added first</caption>
         <thead className="border-b border-line text-xs text-muted">
           <tr>
+            <th scope="col" className="w-10 py-2.5 pr-0 pl-4">
+              <input
+                type="checkbox"
+                checked={tickedCount === rows.length}
+                ref={(el) => {
+                  if (el) el.indeterminate = tickedCount > 0 && tickedCount < rows.length;
+                }}
+                onChange={() => onTickAll(tickedCount !== rows.length)}
+                aria-label={tickedCount === rows.length ? "Untick everyone shown" : "Tick everyone shown"}
+                className="size-4 cursor-pointer accent-[var(--accent)]"
+              />
+            </th>
             <th scope="col" className="px-4 py-2.5 font-medium">Person</th>
             <th scope="col" className="px-4 py-2.5 font-medium">Found in</th>
             <th scope="col" className="px-4 py-2.5 font-medium">Added</th>
@@ -234,15 +315,19 @@ function ListTable({ rows, onRemove }: { rows: Recipient[]; onRemove: (r: Recipi
         <tbody className="divide-y divide-line">
           {rows.map((r) => (
             <tr key={r.email} className="align-top">
+              <td className="py-3.5 pr-0 pl-4">
+                <Tick r={r} ticked={ticked(r)} onTick={onTick} />
+              </td>
               <th scope="row" className="px-4 py-3 font-normal">
                 <span className="block font-medium">{r.name}</span>
                 <Email email={r.email} className="text-[13px] text-muted lg:whitespace-nowrap" />
+                <AlreadyEmailed r={r} log={log} ticked={ticked(r)} />
               </th>
               <td className="px-4 py-3">
                 <FoundIn r={r} />
               </td>
               <td className="px-4 py-3 whitespace-nowrap">{formatDate(r.addedAt)}</td>
-              <td className="px-4 py-3">{STATUS[r.status]}</td>
+              <td className="px-4 py-3">{statusText(r, log)}</td>
               <td className="px-4 py-2.5 text-right">
                 <RemoveButton r={r} onRemove={onRemove} />
               </td>
@@ -255,14 +340,22 @@ function ListTable({ rows, onRemove }: { rows: Recipient[]; onRemove: (r: Recipi
 }
 
 /** Phones: the same fields, in the same order, stacked. */
-function ListCards({ rows, onRemove }: { rows: Recipient[]; onRemove: (r: Recipient) => void }) {
+function ListCards({ rows, log, ticked, onTick, onRemove }: RowProps & { rows: Recipient[] }) {
   return (
     <ul className="mt-5 space-y-3 sm:hidden">
       {rows.map((r) => (
         <li key={r.email}>
           <Card>
-            <p className="font-medium">{r.name}</p>
-            <Email email={r.email} className="text-[13px] text-muted" />
+            <div className="flex items-start gap-3">
+              <div className="pt-0.5">
+                <Tick r={r} ticked={ticked(r)} onTick={onTick} />
+              </div>
+              <div className="min-w-0">
+                <p className="font-medium">{r.name}</p>
+                <Email email={r.email} className="text-[13px] text-muted" />
+                <AlreadyEmailed r={r} log={log} ticked={ticked(r)} />
+              </div>
+            </div>
             <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
               <dt className="text-muted">Found in</dt>
               <dd className="min-w-0">
@@ -271,7 +364,7 @@ function ListCards({ rows, onRemove }: { rows: Recipient[]; onRemove: (r: Recipi
               <dt className="text-muted">Added</dt>
               <dd>{formatDate(r.addedAt)}</dd>
               <dt className="text-muted">Status</dt>
-              <dd>{STATUS[r.status]}</dd>
+              <dd className="min-w-0 [overflow-wrap:anywhere]">{statusText(r, log)}</dd>
             </dl>
             <div className="mt-3">
               <RemoveButton r={r} onRemove={onRemove} />

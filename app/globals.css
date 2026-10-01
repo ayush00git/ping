@@ -9,6 +9,8 @@
   --accent: #c2410c;
   --accent-soft: #fbe9df;
   --danger: #b42318;
+  --warn: #a14a06; /* 5.0:1 on --warn-soft */
+  --warn-soft: #fcebd3;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -21,6 +23,8 @@
     --accent: #f0875a;
     --accent-soft: #2c1d15;
     --danger: #f97066;
+    --warn: #f0b35a;
+    --warn-soft: #3a2a12;
   }
 }
 
@@ -33,6 +37,8 @@
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
   --color-danger: var(--danger);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
 
   --font-sans: var(--font-inter);
   --font-mono: var(--font-jetbrains);

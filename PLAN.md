@@ -130,8 +130,31 @@ recipient, with a 3–5 s gap between sends. Update each row's status as it goes
 **Limits to show in the UI:** consumer Gmail allows about 500 recipients a day and Workspace about 2000.
 Show "N queued" and warn above about 100.
 
-**UI (UI session):** a `/compose` page (or drawer) with subject, body, clickable token chips, a
-recipient picker for the live preview, **Send test to me**, then **Send to N** with a status list for each row.
+**UX (decided 2026-10-01, user-approved, in progress):**
+1. **Choose on `/list`.** Checkboxes, with everyone not yet emailed ticked by default. Already-emailed rows
+   show "Sent <date>". The primary button is "Compose email to N →".
+2. **Write on `/compose`.**
+   - Recipient chips (× to drop someone), and "each gets their own email".
+   - Draft on the left: subject, body, and "Insert:" chips with human labels. Autosaved.
+   - Preview on the right: "Preview for [person ▾]" with ‹ ›. Unknown tokens in red, fallbacks
+     (`firstName` → "there") in amber.
+   - The default template ends with an opt-out line.
+3. **Pre-flight checklist** above the buttons: subject ✓, no unknown tokens ✓ (these two block
+   sending), opt-out line (warning), test sent to yourself (recommended).
+4. **Mode banner:** Dry run / Live from `<MAIL_FROM>` / Not configured, which lists the missing keys
+   and disables sending.
+5. **Send test to me** first. **Send to N** opens a confirm that restates From, count, subject and
+   time estimate, with focus on Cancel.
+6. **Progress on the same page.** Per-person status pills, about 4 s between sends, Stop/Resume.
+   Auth, limit and network errors stop the batch automatically, while a bad address fails only its
+   row. A warning shows on leaving the page.
+7. **Done:** "3 sent · 1 failed" with Retry failed, Back to your list, and Write another email.
+   Emailed addresses get an "Emailed <date>" badge on future lookups.
+
+**Safety:**
+- The server binds to `127.0.0.1` only.
+- Testing always uses `MAIL_DRY_RUN=1`, and the user makes the first real send.
+- Plain text only: no tracking pixels and no link rewriting.
 
 ## Phase 4: hardening
 

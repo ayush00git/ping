@@ -2,6 +2,7 @@ import { AUTHOR_COMMITS_LIMIT } from "@/lib/github";
 import { isGitHubNoreply, type EmailCandidate } from "@/lib/emails";
 import type { AddContext } from "@/lib/shortlist";
 import AddToggle from "@/components/add-toggle";
+import SentBadge from "@/components/sent-badge";
 import { formatDate } from "@/components/format";
 import { Card, Email, SectionHeading, Sep, StatusLabel, plural } from "@/components/ui";
 
@@ -127,6 +128,7 @@ function EmailRow({
         <div className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1 pt-1">
           <Email email={c.email} className={`text-sm ${muted ? "text-muted" : ""}`} />
           <StatusLabel email={c.email} kind={c.kind} />
+          <SentBadge email={c.email} />
         </div>
         {c.kind === "personal" && <AddToggle candidate={c} ctx={ctx} />}
       </div>

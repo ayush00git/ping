@@ -3,15 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -H 127.0.0.1",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -H 127.0.0.1",
     "lint": "eslint",
     "test": "node --experimental-strip-types --test lib/*.test.ts"
   },
   "dependencies": {
     "next": "16.3.7",
-    "nodemailer": "^10.0.12",
+    "nodemailer": "^10.0.13",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "server-only": "^0.0.1"
