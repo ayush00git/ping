@@ -55,7 +55,9 @@ export default function ListManager() {
   if (!hydrated) return <ListSkeleton />;
 
   const newestFirst = [...items].sort((a, b) => b.addedAt.localeCompare(a.addedAt));
-  const q = fold(query.trim());
+  const showFilter = items.length >= FILTER_FROM;
+  // A filter typed earlier stops applying once the box hides (the list shrank to 8 or fewer).
+  const q = showFilter ? fold(query.trim()) : "";
   const rows = q
     ? newestFirst.filter((r) => [r.name, r.email, r.username].some((v) => fold(v).includes(q)))
     : newestFirst;
@@ -65,12 +67,39 @@ export default function ListManager() {
     setRemoved(r);
   };
 
+  const actions = (
+    <div className="ml-auto flex gap-2">
+      <button type="button" onClick={() => downloadCsv(newestFirst)} className={SECONDARY}>
+        Export CSV
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          if (confirm(`Remove all ${plural(items.length, "person", "people")} from your list?`)) {
+            clear();
+            setRemoved(null);
+            setQuery("");
+          }
+        }}
+        className={`${SECONDARY} hover:border-danger hover:text-danger`}
+      >
+        Clear list
+      </button>
+    </div>
+  );
+
   return (
     <section aria-labelledby="list-h" className="mt-12">
-      <h2 id="list-h" ref={headingRef} tabIndex={-1} className="text-lg font-semibold tracking-tight outline-none">
-        Your list
-      </h2>
-      <p className="mt-1 text-sm text-muted">{plural(items.length, "person", "people")} · saved in this browser only</p>
+      {/* With a short list the actions sit on the heading row; a long list gets a filter row for them. */}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 id="list-h" ref={headingRef} tabIndex={-1} className="text-lg font-semibold tracking-tight outline-none">
+            Your list
+          </h2>
+          <p className="mt-1 text-sm text-muted">{plural(items.length, "person", "people")} · saved in this browser only</p>
+        </div>
+        {items.length > 0 && !showFilter && actions}
+      </div>
 
       {removed && (
         <div
@@ -107,8 +136,8 @@ export default function ListManager() {
         </Card>
       ) : (
         <>
-          <div className="mt-5 flex flex-wrap items-center gap-3">
-            {items.length >= FILTER_FROM && (
+          {showFilter && (
+            <div className="mt-5 flex flex-wrap items-center gap-3">
               <div className="min-w-0 flex-1 basis-56 sm:max-w-md">
                 <label htmlFor="list-filter" className="sr-only">
                   Filter by name, email or username
@@ -123,26 +152,9 @@ export default function ListManager() {
                   className="w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm outline-none transition placeholder:text-muted focus:border-accent focus:ring-4 focus:ring-accent-soft"
                 />
               </div>
-            )}
-            <div className="ml-auto flex gap-2">
-              <button type="button" onClick={() => downloadCsv(newestFirst)} className={SECONDARY}>
-                Export CSV
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (confirm(`Remove all ${plural(items.length, "person", "people")} from your list?`)) {
-                    clear();
-                    setRemoved(null);
-                    setQuery("");
-                  }
-                }}
-                className={`${SECONDARY} hover:border-danger hover:text-danger`}
-              >
-                Clear list
-              </button>
+              {actions}
             </div>
-          </div>
+          )}
 
           {rows.length === 0 ? (
             <p className="mt-6 text-sm text-muted">

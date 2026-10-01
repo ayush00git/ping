@@ -2,15 +2,7 @@ import Link from "next/link";
 import SearchForm from "@/components/search-form";
 import ListLink from "@/components/list-link";
 
-/** Page width for every page: full width with side padding, capped for ultrawide screens. */
-export const SHELL = "mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-10";
-
-/**
- * The left column on wide screens stays in view while the right one scrolls. It never grows taller
- * than the screen (minus the recipient tray, which sets --tray-space), scrolling inside instead.
- */
-export const STICKY_SIDE =
-  "lg:sticky lg:top-6 lg:max-h-[calc(100dvh_-_3rem_-_var(--tray-space,0px))] lg:overflow-y-auto lg:pb-1";
+export { SHELL, STICKY_SIDE } from "@/components/layout";
 
 /** The compact bar above results: "ping" (home link) and the search box. */
 export function TopBar({ defaultValue, autoFocus }: { defaultValue: string; autoFocus?: boolean }) {
