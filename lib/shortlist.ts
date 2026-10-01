@@ -88,6 +88,13 @@ function add(c: EmailCandidate, ctx: AddContext) {
   ]);
 }
 
+/** Puts a removed recipient back exactly as it was (same addedAt). Still keyed by email. */
+function restore(r: Recipient) {
+  const items = read();
+  if (items.some((x) => x.email === r.email)) return;
+  write([...items, r]);
+}
+
 function remove(email: string) {
   write(read().filter((r) => r.email !== email));
 }
@@ -100,7 +107,13 @@ export function useShortlist() {
   // The server has no list; the real one appears right after hydration.
   const items = useSyncExternalStore(subscribe, read, () => EMPTY);
   return useMemo(
-    () => ({ items, has: (email: string) => items.some((r) => r.email === email), add, remove, clear }),
+    () => ({ items, has: (email: string) => items.some((r) => r.email === email), add, remove, restore, clear }),
     [items],
   );
+}
+
+const noop = () => () => {};
+/** False on the server and during hydration, true once mounted: tells "not loaded yet" from "empty". */
+export function useHydrated() {
+  return useSyncExternalStore(noop, () => true, () => false);
 }

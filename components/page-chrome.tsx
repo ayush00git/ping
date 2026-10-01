@@ -1,16 +1,21 @@
 import Link from "next/link";
 import SearchForm from "@/components/search-form";
+import ListLink from "@/components/list-link";
 
 /** The compact bar above results: "ping" (home link) and the search box. */
-export function TopBar({ defaultValue }: { defaultValue: string }) {
+export function TopBar({ defaultValue, autoFocus }: { defaultValue: string; autoFocus?: boolean }) {
   return (
-    <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
+    // Phone: "ping … Your list" on one row, search below. Wider: all three on one row.
+    <header className="grid grid-cols-[auto_1fr] items-center gap-x-5 gap-y-3 sm:grid-cols-[auto_1fr_auto]">
       <h1 className="font-serif text-3xl leading-none tracking-tight">
         <Link href="/" className="underline-offset-4 hover:underline">
           ping
         </Link>
       </h1>
-      <SearchForm defaultValue={defaultValue} className="sm:flex-1" />
+      <div className="justify-self-end sm:order-last">
+        <ListLink />
+      </div>
+      <SearchForm defaultValue={defaultValue} autoFocus={autoFocus} className="col-span-2 sm:col-span-1" />
     </header>
   );
 }

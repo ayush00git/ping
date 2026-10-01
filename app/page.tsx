@@ -4,6 +4,7 @@ import SearchForm from "@/components/search-form";
 import Results, { ResultsSkeleton } from "@/components/results";
 import RecipientsTray from "@/components/recipients-tray";
 import { Footer, TopBar } from "@/components/page-chrome";
+import ListLink from "@/components/list-link";
 import { parseLinkedInUrl } from "@/lib/linkedin";
 
 export default async function Home({ searchParams }: PageProps<"/">) {
@@ -20,6 +21,9 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   if (!username) {
     return (
       <main className="mx-auto flex min-h-dvh max-w-2xl flex-col px-4 sm:px-6">
+        <div className="flex h-12 items-center justify-end">
+          <ListLink onlyWhenNonEmpty />
+        </div>
         <div className="flex flex-1 flex-col items-center justify-center py-16 text-center">
           <h1 className="font-serif text-4xl tracking-tight">ping</h1>
           <p className="mt-2 text-muted">Find a developer&apos;s public commit email.</p>

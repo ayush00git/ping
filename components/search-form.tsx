@@ -1,6 +1,14 @@
 import Form from "next/form";
 
-export default function SearchForm({ defaultValue, className = "" }: { defaultValue: string; className?: string }) {
+export default function SearchForm({
+  defaultValue,
+  className = "",
+  autoFocus = !defaultValue,
+}: {
+  defaultValue: string;
+  className?: string;
+  autoFocus?: boolean;
+}) {
   return (
     <Form action="/" className={className}>
       <label htmlFor="u" className="sr-only">
@@ -17,7 +25,7 @@ export default function SearchForm({ defaultValue, className = "" }: { defaultVa
           autoComplete="off"
           autoCapitalize="none"
           spellCheck={false}
-          autoFocus={!defaultValue}
+          autoFocus={autoFocus}
           required
           className="min-w-0 flex-1 bg-transparent py-2.5 font-mono font-medium outline-none placeholder:font-sans placeholder:font-normal placeholder:text-muted"
         />

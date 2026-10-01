@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useShortlist } from "@/lib/shortlist";
 import { Email } from "@/components/ui";
 
@@ -64,15 +65,20 @@ export default function RecipientsTray() {
             <p className="text-sm">
               <span className="font-semibold">{items.length}</span> in your list
             </p>
-            <button
-              type="button"
-              onClick={() => setOpen((o) => !o)}
-              aria-expanded={open}
-              aria-controls="tray-list"
-              className="cursor-pointer rounded-xl border border-line px-3.5 py-1.5 text-sm transition hover:border-accent hover:text-accent"
-            >
-              {open ? "Hide list" : "Show list"}
-            </button>
+            <div className="flex items-center gap-3">
+              <Link href="/list" className="text-sm text-accent underline-offset-4 hover:underline">
+                Open list
+              </Link>
+              <button
+                type="button"
+                onClick={() => setOpen((o) => !o)}
+                aria-expanded={open}
+                aria-controls="tray-list"
+                className="cursor-pointer rounded-xl border border-line px-3.5 py-1.5 text-sm transition hover:border-accent hover:text-accent"
+              >
+                {open ? "Hide list" : "Show list"}
+              </button>
+            </div>
           </div>
         </div>
       </section>

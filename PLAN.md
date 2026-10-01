@@ -14,7 +14,7 @@ that list in one go.
 - `lib/shortlist.ts`: the recipient list in `localStorage`.
 - `components/`: repo summary, "Emails found" panel with **Yes, add**, commit log, recipient tray, error states.
 
-Phase 5 (LinkedIn → GitHub finder at `/find`) is done. The `/list` page is in progress. Phase 3 (compose and send) hasn't started.
+Phase 5 (LinkedIn → GitHub finder at `/find`) is done. The `/list` page (review, remove with undo, filter, CSV export) is done. Phase 3 (compose and send) hasn't started.
 All code is written by one session (**designer-bruh**) and reviewed by the planner session.
 
 ## Facts checked against the live API (2026-09-30)
@@ -239,6 +239,6 @@ auto-select-all or scraping of many users at once.
 2. ~~`lib/shortlist.ts` store~~ (done)
 3. ~~Email panel, Yes toggle, tray~~ (done)
 4. ~~Phase 5: LinkedIn → GitHub finder~~ (done)
-5. `/list` page: review and manage the recipient list (in progress)
+5. ~~`/list` page: review and manage the recipient list~~ (done)
 6. `lib/mailer.ts` + `app/actions.ts` (dry run first), then `/compose`
 7. Auth gate, only if it's ever deployed (currently local only)
