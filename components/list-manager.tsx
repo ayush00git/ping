@@ -96,7 +96,7 @@ export default function ListManager() {
       )}
 
       {items.length === 0 ? (
-        <Card className="mt-6">
+        <Card className="mt-6 max-w-2xl">
           <p className="font-medium">Your list is empty.</p>
           <p className="mt-1 text-sm text-muted">
             <Link href="/" className="text-accent underline underline-offset-2">
@@ -109,7 +109,7 @@ export default function ListManager() {
         <>
           <div className="mt-5 flex flex-wrap items-center gap-3">
             {items.length >= FILTER_FROM && (
-              <div className="min-w-0 flex-1 basis-56">
+              <div className="min-w-0 flex-1 basis-56 sm:max-w-md">
                 <label htmlFor="list-filter" className="sr-only">
                   Filter by name, email or username
                 </label>
@@ -124,7 +124,7 @@ export default function ListManager() {
                 />
               </div>
             )}
-            <div className="flex gap-2">
+            <div className="ml-auto flex gap-2">
               <button type="button" onClick={() => downloadCsv(newestFirst)} className={SECONDARY}>
                 Export CSV
               </button>
@@ -224,7 +224,7 @@ function ListTable({ rows, onRemove }: { rows: Recipient[]; onRemove: (r: Recipi
             <tr key={r.email} className="align-top">
               <th scope="row" className="px-4 py-3 font-normal">
                 <span className="block font-medium">{r.name}</span>
-                <Email email={r.email} className="text-[13px] text-muted" />
+                <Email email={r.email} className="text-[13px] text-muted lg:whitespace-nowrap" />
               </th>
               <td className="px-4 py-3">
                 <FoundIn r={r} />

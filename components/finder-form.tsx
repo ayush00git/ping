@@ -14,7 +14,7 @@ export default function FinderForm({ slug, hints, nameRequired }: { slug: string
       <p className="text-sm text-muted">
         ping doesn&apos;t open LinkedIn. Copy these from their profile to improve the match.
       </p>
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-1 2xl:grid-cols-2">
         <Field name="name" label="Full name" defaultValue={hints.name ?? ""} required={nameRequired} />
         <Field name="company" label="Company" defaultValue={hints.company} />
         <Field name="city" label="City" defaultValue={hints.city} />

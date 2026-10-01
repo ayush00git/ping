@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import FinderForm from "@/components/finder-form";
 import FinderResults, { FinderSkeleton } from "@/components/finder-results";
 import RecipientsTray from "@/components/recipients-tray";
-import { Footer, TopBar } from "@/components/page-chrome";
+import { Footer, SHELL, STICKY_SIDE, TopBar } from "@/components/page-chrome";
 import { Card, Notice, SectionHeading } from "@/components/ui";
 import { hasToken } from "@/lib/github";
 import { linkedInUrl, nameFromSlug, normaliseSlug, parseLinkedInUrl, type Hints, type LinkedInUrl } from "@/lib/linkedin";
@@ -59,57 +59,60 @@ export default async function FindPage({ searchParams }: PageProps<"/find">) {
 
   return (
     <Shell searchValue={`linkedin.com/in/${slug}`}>
-      <section aria-labelledby="li-h" className="mt-12">
-        <SectionHeading id="li-h" title="LinkedIn profile" />
-        <Card>
-          <p>
-            <a
-              href={linkedInUrl(slug)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-mono text-sm text-accent underline-offset-2 [overflow-wrap:anywhere] hover:underline"
-            >
-              linkedin.com/in/{slug}
-            </a>
-            <span className="text-[13px] text-muted"> · opens LinkedIn in a new tab</span>
-          </p>
-          <p className="mt-2 text-sm">
-            {slugName ? (
-              <>
-                Name read from the URL: <span className="font-medium">{slugName}</span>
-              </>
-            ) : (
-              "This URL has no name in it. Type it below."
-            )}
-          </p>
-          <FinderForm slug={slug} hints={hints} nameRequired={!slugName} />
-        </Card>
-      </section>
-
-      <section aria-labelledby="gh-h" className="mt-12">
-        <SectionHeading id="gh-h" title="GitHub accounts that might be them" />
-        {hasToken() ? (
-          <Suspense key={here} fallback={<FinderSkeleton />}>
-            <FinderResults slug={slug} hints={hints} retryHref={here} />
-          </Suspense>
-        ) : (
+      {/* Wide screens: the profile and hints stay in view on the left, accounts on the right. */}
+      <div className="mt-10 grid gap-12 lg:grid-cols-12 lg:items-start lg:gap-10">
+        <section aria-labelledby="li-h" className={`lg:col-span-4 ${STICKY_SIDE}`}>
+          <SectionHeading id="li-h" title="LinkedIn profile" />
           <Card>
-            <p className="font-medium">The finder needs a GitHub token.</p>
-            <p className="mt-1 text-sm text-muted">
-              Searching GitHub for pages that link to a LinkedIn profile only works when signed in. Add{" "}
-              <code className="font-mono text-ink">GITHUB_TOKEN</code> to{" "}
-              <code className="font-mono text-ink">.env.local</code> and restart the server.
+            <p>
+              <a
+                href={linkedInUrl(slug)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-mono text-sm text-accent underline-offset-2 [overflow-wrap:anywhere] hover:underline"
+              >
+                linkedin.com/in/{slug}
+              </a>
+              <span className="text-[13px] text-muted"> · opens LinkedIn in a new tab</span>
             </p>
+            <p className="mt-2 text-sm">
+              {slugName ? (
+                <>
+                  Name read from the URL: <span className="font-medium">{slugName}</span>
+                </>
+              ) : (
+                "This URL has no name in it. Type it below."
+              )}
+            </p>
+            <FinderForm slug={slug} hints={hints} nameRequired={!slugName} />
           </Card>
-        )}
-      </section>
+        </section>
+
+        <section aria-labelledby="gh-h" className="lg:col-span-8">
+          <SectionHeading id="gh-h" title="GitHub accounts that might be them" />
+          {hasToken() ? (
+            <Suspense key={here} fallback={<FinderSkeleton />}>
+              <FinderResults slug={slug} hints={hints} retryHref={here} />
+            </Suspense>
+          ) : (
+            <Card>
+              <p className="font-medium">The finder needs a GitHub token.</p>
+              <p className="mt-1 text-sm text-muted">
+                Searching GitHub for pages that link to a LinkedIn profile only works when signed in. Add{" "}
+                <code className="font-mono text-ink">GITHUB_TOKEN</code> to{" "}
+                <code className="font-mono text-ink">.env.local</code> and restart the server.
+              </p>
+            </Card>
+          )}
+        </section>
+      </div>
     </Shell>
   );
 }
 
 function Shell({ searchValue, children }: { searchValue: string; children: React.ReactNode }) {
   return (
-    <main className="mx-auto max-w-2xl px-4 pt-6 sm:px-6 sm:pt-8">
+    <main className={`${SHELL} pt-6 sm:pt-8`}>
       <TopBar defaultValue={searchValue} />
       {children}
       <Footer className="mt-20" />

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import SearchForm from "@/components/search-form";
 import Results, { ResultsSkeleton } from "@/components/results";
 import RecipientsTray from "@/components/recipients-tray";
-import { Footer, TopBar } from "@/components/page-chrome";
+import { Footer, SHELL, TopBar } from "@/components/page-chrome";
 import ListLink from "@/components/list-link";
 import { parseLinkedInUrl } from "@/lib/linkedin";
 
@@ -20,7 +20,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   // Empty homepage: title and search centred on the screen, footer at the bottom.
   if (!username) {
     return (
-      <main className="mx-auto flex min-h-dvh max-w-2xl flex-col px-4 sm:px-6">
+      <main className={`${SHELL} flex min-h-dvh flex-col`}>
         <div className="flex h-12 items-center justify-end">
           <ListLink onlyWhenNonEmpty />
         </div>
@@ -37,7 +37,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
 
   // Results: a compact bar at the top, results below.
   return (
-    <main className="mx-auto max-w-2xl px-4 pt-6 sm:px-6 sm:pt-8">
+    <main className={`${SHELL} pt-6 sm:pt-8`}>
       <TopBar defaultValue={username} />
 
       {/* Keyed by user only: paging the commit log reloads just that section. */}

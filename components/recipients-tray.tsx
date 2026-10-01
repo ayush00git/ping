@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useShortlist } from "@/lib/shortlist";
 import { Email } from "@/components/ui";
@@ -8,6 +8,15 @@ import { Email } from "@/components/ui";
 export default function RecipientsTray() {
   const { items, remove, clear } = useShortlist();
   const [open, setOpen] = useState(false);
+
+  // Sticky side columns shrink by this much so the fixed tray never hides their end.
+  useEffect(() => {
+    if (items.length === 0) return;
+    document.documentElement.style.setProperty("--tray-space", "6rem");
+    return () => {
+      document.documentElement.style.removeProperty("--tray-space");
+    };
+  }, [items.length]);
 
   if (items.length === 0) return null;
 
@@ -18,9 +27,9 @@ export default function RecipientsTray() {
 
       <section
         aria-label="Your list"
-        className="fixed inset-x-0 bottom-0 z-10 px-3 pb-3 sm:px-6 sm:pb-4"
+        className="fixed inset-x-0 bottom-0 z-10 px-4 pb-3 sm:px-6 sm:pb-4 lg:px-10"
       >
-        <div className="mx-auto max-w-2xl rounded-2xl border border-line bg-surface shadow-[0_8px_30px_rgb(0_0_0/0.10)]">
+        <div className="mx-auto max-w-[1600px] rounded-2xl border border-line bg-surface shadow-[0_8px_30px_rgb(0_0_0/0.10)]">
           {open && (
             <div id="tray-list" className="border-b border-line">
               <ul className="max-h-[50vh] divide-y divide-line overflow-y-auto px-4 sm:px-5">

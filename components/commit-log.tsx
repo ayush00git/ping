@@ -78,7 +78,7 @@ function CommitRow({ c, fullName }: { c: Commit; fullName: string }) {
         {title}
       </a>
       {body && (
-        <p className="mt-1 line-clamp-2 text-[13.5px] whitespace-pre-line text-muted [overflow-wrap:anywhere]">
+        <p className="mt-1 line-clamp-2 max-w-prose text-[13.5px] whitespace-pre-line text-muted [overflow-wrap:anywhere]">
           {body}
         </p>
       )}

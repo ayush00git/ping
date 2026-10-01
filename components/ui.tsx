@@ -38,7 +38,7 @@ export function Notice({
   error?: boolean;
 }) {
   return (
-    <Card className="mt-10">
+    <Card className="mt-10 max-w-2xl">
       <div role={error ? "alert" : "status"}>
         <p className={`font-medium ${error ? "text-danger" : ""}`}>{title}</p>
         {children && <div className="mt-1.5 text-sm text-muted">{children}</div>}

@@ -65,7 +65,7 @@ export default async function FinderResults({
       </p>
 
       {skipped.length > 0 && (
-        <div role="status" className="mb-5 rounded-xl border border-line px-4 py-3 text-sm">
+        <div role="status" className="mb-5 max-w-2xl rounded-xl border border-line px-4 py-3 text-sm">
           {skipped.map((s) => (
             <p key={s}>{s}</p>
           ))}
@@ -73,7 +73,7 @@ export default async function FinderResults({
       )}
 
       {shown.length === 0 && ruledOut.length === 0 ? (
-        <Card>
+        <Card className="max-w-2xl">
           <p className="font-medium">No GitHub account found.</p>
           <p className="mt-1 text-sm text-muted">They may not have one, or use a different name there.</p>
         </Card>
@@ -101,7 +101,7 @@ export default async function FinderResults({
                     {inTier.length} accounts match equally. Compare them before choosing.
                   </p>
                 )}
-                <ul className="space-y-3">
+                <ul className="grid gap-3 xl:grid-cols-2">
                   {inTier.map((f) => (
                     <AccountCard key={f.user.login} f={f} primary={f.user.login === primary} />
                   ))}
@@ -117,7 +117,7 @@ export default async function FinderResults({
                 <span className="ml-2 hidden text-sm font-normal text-accent group-open:inline">Hide</span>
               </summary>
               <p className="mb-3 text-sm text-muted">Their GitHub profile links to a different LinkedIn profile.</p>
-              <ul className="space-y-3">
+              <ul className="grid gap-3 xl:grid-cols-2">
                 {ruledOut.map((f) => (
                   <AccountCard key={f.user.login} f={f} primary={false} />
                 ))}
@@ -154,7 +154,7 @@ function AccountCard({ f, primary }: { f: Found; primary: boolean }) {
   const meta = [`@${u.login}`, u.company, u.location].filter(Boolean).join(" · ");
   return (
     <li>
-      <Card>
+      <Card className="h-full">
         <div className="flex items-start gap-3">
           <Image src={u.avatar_url} alt="" width={40} height={40} className="shrink-0 rounded-full border border-line" />
           <div className="min-w-0">
@@ -162,7 +162,7 @@ function AccountCard({ f, primary }: { f: Found; primary: boolean }) {
             <p className="text-sm break-words text-muted">{meta}</p>
           </div>
         </div>
-        {u.bio && <p className="mt-3 line-clamp-2 text-sm [overflow-wrap:anywhere]">{u.bio}</p>}
+        {u.bio && <p className="mt-3 line-clamp-2 max-w-prose text-sm [overflow-wrap:anywhere]">{u.bio}</p>}
 
         <ul className="mt-3 space-y-1 text-sm">
           {f.evidence.map((e) => (
@@ -209,7 +209,7 @@ export function FinderSkeleton() {
       <p role="status" className="-mt-2 mb-5 text-sm text-muted">
         Searching GitHub…
       </p>
-      <div className="space-y-3 motion-safe:animate-pulse" aria-hidden>
+      <div className="grid gap-3 motion-safe:animate-pulse xl:grid-cols-2" aria-hidden>
         {Array.from({ length: 3 }, (_, i) => (
           <Card key={i}>
             <div className="flex items-center gap-3">
