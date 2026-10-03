@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Instrument_Serif, Inter, JetBrains_Mono } from "next/font/google";
+import ListInboxSync from "@/components/list-inbox-sync";
 import "./globals.css";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
@@ -23,7 +24,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${inter.variable} ${jetbrains.variable} ${instrument.variable} h-full antialiased`}
     >
-      <body className="min-h-full font-sans text-[15px] leading-relaxed">{children}</body>
+      <body className="min-h-full font-sans text-[15px] leading-relaxed">
+        {children}
+        {/* People added from the MCP server's add_to_list tool. */}
+        <ListInboxSync />
+      </body>
     </html>
   );
 }

@@ -33,6 +33,9 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# people added from the MCP server, waiting for the browser's list (lib/list-inbox.ts)
+/.ping/
+
 # vercel
 .vercel
 
