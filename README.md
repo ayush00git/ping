@@ -19,3 +19,19 @@ Unauthenticated GitHub requests are limited to 60/hour. To raise it to 5,000/hou
 ```
 GITHUB_TOKEN=ghp_...
 ```
+
+## MCP server
+
+`npm run mcp` starts an MCP server over stdio, so an agent such as Claude Code can use ping. It
+reads `GITHUB_TOKEN` from `.env.local` like the web app. Claude Code picks it up from `.mcp.json`
+in this folder. For another client, run `npm --prefix /path/to/ping run --silent mcp`.
+
+| Tool | What it does |
+|---|---|
+| `lookup_emails` | One GitHub user's commit emails, as on the results page: which can receive mail, and why not for the rest. |
+| `find_github_from_linkedin` | GitHub accounts that might belong to one LinkedIn profile, graded Confirmed / Likely / Possible with evidence. Needs `GITHUB_TOKEN`. The agent is told to let you choose. |
+| `add_to_list` | Puts one address that `lookup_emails` found on your list, like **Yes, add**. |
+
+The list lives in the browser, so `add_to_list` writes to `.ping/list-inbox.jsonl` and any open
+ping page adds new entries to its list within a few seconds. To keep lookups personal rather than
+bulk, the server allows 30 lookups and 10 LinkedIn searches an hour.
