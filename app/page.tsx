@@ -6,6 +6,8 @@ import RecipientsTray from "@/components/recipients-tray";
 import { Footer, SHELL, TopBar } from "@/components/page-chrome";
 import ListLink from "@/components/list-link";
 import { parseLinkedInUrl } from "@/lib/linkedin";
+import { parseGitHubInput } from "@/lib/github-url";
+import { Notice } from "@/components/ui";
 
 export default async function Home({ searchParams }: PageProps<"/">) {
   const params = await searchParams;
@@ -16,6 +18,25 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   const linkedIn = username ? parseLinkedInUrl(username) : null;
   if (linkedIn?.kind === "profile") redirect(`/find?li=${encodeURIComponent(linkedIn.slug)}`);
   if (linkedIn) redirect(`/find?url=${encodeURIComponent(username)}`);
+
+  // A GitHub link: keep just the username, and remember the repo it named.
+  const gitHub = username ? parseGitHubInput(username) : null;
+  if (gitHub?.kind === "user") {
+    redirect(`/?u=${encodeURIComponent(gitHub.login)}${gitHub.repo ? `&linked=${encodeURIComponent(gitHub.repo)}` : ""}`);
+  }
+  if (gitHub) {
+    return (
+      <main className={`${SHELL} pt-6 sm:pt-8`}>
+        <TopBar defaultValue={username} />
+        <Notice error title={gitHub.reason}>
+          Paste a person&apos;s profile link, <span className="font-mono">github.com/&lt;username&gt;</span>
+        </Notice>
+        <Footer className="mt-20" />
+        <RecipientsTray />
+      </main>
+    );
+  }
+  const linkedRepo = first(params.linked)?.trim() || undefined;
 
   // Empty homepage: title and search centred on the screen, footer at the bottom.
   if (!username) {
@@ -42,7 +63,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
 
       {/* Keyed by user only: paging the commit log reloads just that section. */}
       <Suspense key={username} fallback={<ResultsSkeleton username={username} />}>
-        <Results username={username} page={page} />
+        <Results username={username} page={page} linkedRepo={linkedRepo} />
       </Suspense>
 
       <Footer className="mt-20" />

@@ -11,7 +11,16 @@ import { STICKY_SIDE } from "@/components/page-chrome";
 
 const SELECTION_RULE = "Most recently created repository (forks skipped)";
 
-export default async function Results({ username, page }: { username: string; page: number }) {
+export default async function Results({
+  username,
+  page,
+  linkedRepo,
+}: {
+  username: string;
+  page: number;
+  /** The repo named in a pasted GitHub link, if any. */
+  linkedRepo?: string;
+}) {
   let repo: Repo | null = null;
   let authorCommits: Commit[] = [];
   let failure: unknown = null;
@@ -39,7 +48,7 @@ export default async function Results({ username, page }: { username: string; pa
     // Wide screens: the answer (repo + emails) stays in view on the left while commits scroll on the right.
     <div className="mt-10 grid gap-12 lg:grid-cols-12 lg:items-start lg:gap-10">
       <div className={`space-y-12 lg:col-span-5 ${STICKY_SIDE}`}>
-        <RepoSummary repo={repo} />
+        <RepoSummary repo={repo} linkedRepo={linkedRepo} />
 
         <EmailsPanel
           candidates={candidates}
@@ -64,10 +73,31 @@ export default async function Results({ username, page }: { username: string; pa
   );
 }
 
-function RepoSummary({ repo }: { repo: Repo }) {
+function RepoSummary({ repo, linkedRepo }: { repo: Repo; linkedRepo?: string }) {
+  // A pasted link named a different repo: say which one ping shows instead.
+  const otherRepo = linkedRepo && linkedRepo.toLowerCase() !== repo.name.toLowerCase() ? linkedRepo : null;
   return (
     <section aria-labelledby="repo-h">
-      <SectionHeading id="repo-h" title="Repository" />
+      <SectionHeading
+        id="repo-h"
+        title="Repository"
+        scope={
+          otherRepo && (
+            <>
+              Your link pointed to{" "}
+              <a
+                href={`https://github.com/${repo.owner.login}/${encodeURIComponent(otherRepo)}`}
+                target="_blank"
+                rel="noopener"
+                className="font-mono text-accent underline-offset-2 hover:underline"
+              >
+                {repo.owner.login}/{otherRepo}
+              </a>
+              . ping shows their most recently created repository instead.
+            </>
+          )
+        }
+      />
       <Card>
         <div className="flex items-center gap-3">
           <Image

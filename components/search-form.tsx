@@ -12,7 +12,7 @@ export default function SearchForm({
   return (
     <Form action="/" className={className}>
       <label htmlFor="u" className="sr-only">
-        GitHub username or LinkedIn URL
+        GitHub username, GitHub URL or LinkedIn URL
       </label>
       <div className="flex items-center rounded-2xl border border-line bg-surface py-1.5 pr-1.5 pl-3 transition sm:pl-4 focus-within:border-accent focus-within:ring-4 focus-within:ring-accent-soft">
         <input
@@ -21,7 +21,7 @@ export default function SearchForm({
           id="u"
           name="u"
           defaultValue={defaultValue}
-          placeholder="Username or LinkedIn URL"
+          placeholder="Username or profile URL"
           autoComplete="off"
           autoCapitalize="none"
           spellCheck={false}
